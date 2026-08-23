@@ -34,8 +34,6 @@ class Question(Base):
     correct_answer: Mapped[Any] = mapped_column(JSON)
     explanation: Mapped[str] = mapped_column(Text, default="")
     scoring_points: Mapped[list[str]] = mapped_column(JSON, default=list)
-    visible_tests: Mapped[list[str]] = mapped_column(JSON, default=list)
-    hidden_tests: Mapped[list[str]] = mapped_column(JSON, default=list)
     tags: Mapped[list[str]] = mapped_column(JSON, default=list)
     source_url: Mapped[str] = mapped_column(Text, default="")
     verified_at: Mapped[date | None] = mapped_column(Date, nullable=True)
@@ -161,27 +159,6 @@ class AppSetting(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, onupdate=utcnow
     )
-
-
-class CandidateQuestion(Base):
-    __tablename__ = "candidate_questions"
-    id: Mapped[int] = mapped_column(primary_key=True)
-    parent_question_id: Mapped[int] = mapped_column(ForeignKey("questions.id"), index=True)
-    stem: Mapped[str] = mapped_column(Text)
-    type: Mapped[str] = mapped_column(String(30))
-    difficulty: Mapped[str] = mapped_column(String(20))
-    category: Mapped[str] = mapped_column(String(40))
-    options: Mapped[list[str]] = mapped_column(JSON, default=list)
-    correct_answer: Mapped[Any] = mapped_column(JSON)
-    explanation: Mapped[str] = mapped_column(Text, default="")
-    scoring_points: Mapped[list[str]] = mapped_column(JSON, default=list)
-    tags: Mapped[list[str]] = mapped_column(JSON, default=list)
-    source_url: Mapped[str] = mapped_column(Text)
-    evidence_title: Mapped[str] = mapped_column(Text)
-    evidence_excerpt: Mapped[str] = mapped_column(Text)
-    status: Mapped[str] = mapped_column(String(20), default="pending", index=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
-    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class QuestionMastery(Base):

@@ -27,7 +27,6 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import String, cast, func, select
 from sqlalchemy.orm import Session, selectinload
 
-from .code_runner import run_python_submission
 from .config import Settings, get_settings
 from .database import Base, make_engine, make_session_factory
 from .grading import GradeProvider, build_openai_grade_provider, run_pending_grading
@@ -45,7 +44,6 @@ from .models import (
     AppSetting,
     Attempt,
     AttemptQuestion,
-    CandidateQuestion,
     Checkpoint,
     GradingTask,
     GradingVersion,
@@ -64,7 +62,6 @@ from .resume_parser import ResumeParser, parse_resume
 from .schemas import (
     AnswerInput,
     AttemptCreate,
-    CodeRunInput,
     FailureInput,
     GradingResultInput,
     InterviewCreate,
@@ -75,16 +72,14 @@ from .schemas import (
     ReviewCardImport,
     ScoreOverrideInput,
     SettingsInput,
-    VariantRequest,
 )
 from .services import (
     EXAM_DURATION_MINUTES,
     EXAM_QUESTION_COUNT,
     active_plan_questions,
 )
-from .variants import VariantGenerator, build_variant_generator
 
-SUBJECTIVE_TYPES = {"short_answer", "project", "system_design", "code"}
+SUBJECTIVE_TYPES = {"short_answer", "project", "system_design"}
 
 
 def _aware(value: datetime | None) -> datetime | None:
@@ -108,7 +103,6 @@ def _public_question(question: Question, reveal: bool = False) -> dict[str, Any]
         "stem": question.stem,
         "options": question.options,
         "tags": question.tags,
-        "visible_tests": question.visible_tests,
         "source_url": question.source_url,
         "verified_at": question.verified_at.isoformat() if question.verified_at else None,
         "is_core": question.is_core,
@@ -119,7 +113,6 @@ def _public_question(question: Question, reveal: bool = False) -> dict[str, Any]
             correct_answer=question.correct_answer,
             explanation=question.explanation,
             scoring_points=question.scoring_points,
-            hidden_tests=question.hidden_tests,
         )
     return data
 
@@ -354,7 +347,6 @@ def _latest_submitted_formal(session: Session) -> Attempt | None:
 def create_app(
     database_url: str | None = None,
     grade_provider: GradeProvider | None = None,
-    variant_generator: VariantGenerator | None = None,
     resume_parser_fn: ResumeParser | None = None,
     research_fn: ResearchFn | None = None,
     generate_fn: GenerateFn | None = None,
@@ -376,7 +368,6 @@ def create_app(
     app.state.session_factory = factory
     app.state.grading_stop_event = threading.Event()
     app.state.grade_provider = grade_provider
-    app.state.variant_generator = variant_generator
     app.state.resume_parser = resume_parser_fn
     app.state.research_fn = research_fn
     app.state.generate_fn = generate_fn
@@ -553,23 +544,6 @@ def create_app(
             old_backup.unlink()
         return {"created": True, "filename": destination.name}
 
-    @app.post("/api/code/run")
-    def code_run(payload: CodeRunInput, session: Session = Depends(db)) -> dict[str, Any]:
-        visible_tests = payload.visible_tests
-        hidden_tests = payload.hidden_tests
-        if payload.question_id is not None:
-            question = session.get(Question, payload.question_id)
-            if not question or question.type != "code":
-                raise HTTPException(404, "代码题不存在")
-            visible_tests = question.visible_tests
-            hidden_tests = question.hidden_tests
-        return run_python_submission(
-            payload.code,
-            visible_tests,
-            hidden_tests,
-            settings.code_timeout_seconds,
-        )
-
     @app.post("/api/questions/import")
     def import_questions(payload: QuestionImport, session: Session = Depends(db)) -> dict[str, int]:
         created = updated = 0
@@ -643,113 +617,6 @@ def create_app(
         question.enabled = False
         session.commit()
         return Response(status_code=204)
-
-    def candidate_data(candidate: CandidateQuestion) -> dict[str, Any]:
-        display_type = candidate.type
-        if display_type == "choice":
-            display_type = (
-                "multiple"
-                if isinstance(candidate.correct_answer, list) and len(candidate.correct_answer) > 1
-                else "single"
-            )
-        return {
-            "id": candidate.id,
-            "parent_question_id": candidate.parent_question_id,
-            "stem": candidate.stem,
-            "type": display_type,
-            "difficulty": candidate.difficulty,
-            "domain": candidate.category,
-            "options": candidate.options,
-            "choices": [
-                {"key": chr(65 + index), "text": text}
-                for index, text in enumerate(candidate.options)
-            ],
-            "correct_answer": candidate.correct_answer,
-            "explanation": candidate.explanation,
-            "source_url": candidate.source_url,
-            "evidence_title": candidate.evidence_title,
-            "evidence_excerpt": candidate.evidence_excerpt,
-            "status": candidate.status,
-        }
-
-    @app.post("/api/questions/{question_id}/variants", status_code=201)
-    def generate_variants(
-        question_id: int,
-        payload: VariantRequest,
-        session: Session = Depends(db),
-    ) -> dict[str, Any]:
-        question = session.get(Question, question_id)
-        if not question:
-            raise HTTPException(404, "题目不存在")
-        generator = app.state.variant_generator
-        if generator is None:
-            if not settings.llm_api_key or not settings.llm_model:
-                raise HTTPException(422, "请先配置大模型，DDG 搜索本身不需要密钥")
-            generator = build_variant_generator(settings)
-            app.state.variant_generator = generator
-        try:
-            items = generator(question, payload.count)
-        except Exception as exc:
-            raise HTTPException(503, str(exc)) from exc
-        candidates = []
-        for item in items:
-            candidate = CandidateQuestion(parent_question_id=question.id, **item)
-            session.add(candidate)
-            candidates.append(candidate)
-        session.commit()
-        for candidate in candidates:
-            session.refresh(candidate)
-        return {"created": len(candidates), "items": [candidate_data(c) for c in candidates]}
-
-    @app.get("/api/candidates")
-    def list_candidates(session: Session = Depends(db)) -> list[dict[str, Any]]:
-        candidates = session.scalars(
-            select(CandidateQuestion).order_by(CandidateQuestion.id.desc())
-        ).all()
-        return [candidate_data(candidate) for candidate in candidates]
-
-    @app.post("/api/candidates/{candidate_id}/approve")
-    def approve_candidate(candidate_id: int, session: Session = Depends(db)) -> dict[str, Any]:
-        candidate = session.get(CandidateQuestion, candidate_id)
-        if not candidate:
-            raise HTTPException(404, "候选题不存在")
-        if candidate.status != "pending":
-            raise HTTPException(409, "候选题已经审核")
-        question = Question(
-            external_id=f"ai-candidate-{candidate.id}",
-            type=candidate.type,
-            difficulty=candidate.difficulty,
-            category=candidate.category,
-            stem=candidate.stem,
-            options=candidate.options,
-            correct_answer=candidate.correct_answer,
-            explanation=candidate.explanation,
-            scoring_points=candidate.scoring_points,
-            tags=candidate.tags,
-            source_url=candidate.source_url,
-            verified_at=date.today(),
-            is_core=True,
-            enabled=True,
-        )
-        session.add(question)
-        candidate.status = "approved"
-        candidate.reviewed_at = datetime.now(UTC)
-        session.commit()
-        session.refresh(question)
-        return {
-            "candidate": candidate_data(candidate),
-            "question": _public_question(question, True),
-        }
-
-    @app.post("/api/candidates/{candidate_id}/reject")
-    def reject_candidate(candidate_id: int, session: Session = Depends(db)) -> dict[str, Any]:
-        candidate = session.get(CandidateQuestion, candidate_id)
-        if not candidate:
-            raise HTTPException(404, "候选题不存在")
-        candidate.status = "rejected"
-        candidate.reviewed_at = datetime.now(UTC)
-        session.commit()
-        return candidate_data(candidate)
 
     @app.post("/api/review-cards/import")
     def import_cards(payload: ReviewCardImport, session: Session = Depends(db)) -> dict[str, int]:

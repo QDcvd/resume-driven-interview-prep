@@ -16,7 +16,6 @@ class Settings(BaseSettings):
     llm_timeout_seconds: float = 60.0
     llm_max_batch_size: int = 30
     interview_date: date = date(2026, 8, 11)
-    code_timeout_seconds: float = 5.0
     search_max_results: int = 8
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")

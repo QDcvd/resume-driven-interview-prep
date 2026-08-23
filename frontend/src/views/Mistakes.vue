@@ -4,8 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 import { api } from "../api/client";
 import type { Question } from "../types";
 const items = ref<Question[]>([]),
-  due = ref(0),
-  generating = ref<number>();
+  due = ref(0);
 const router = useRouter();
 const route = useRoute();
 const domain = computed(() =>
@@ -28,14 +27,6 @@ onMounted(async () => {
   items.value = r.items;
   due.value = r.due_count;
 });
-async function variant(id: number) {
-  generating.value = id;
-  try {
-    await api.generateVariant(id, 3);
-  } finally {
-    generating.value = undefined;
-  }
-}
 async function retry(questionIds: number[] = []) {
   const attempt = await api.createAttempt("mistakes", questionIds);
   await router.push(`/attempts/${attempt.id}/review`);
@@ -101,8 +92,6 @@ function answerText(question: Question) {
       <div class="toolbar">
         <el-button type="primary" plain @click="retry([q.id])"
           >立即重考</el-button
-        ><el-button :loading="generating === q.id" @click="variant(q.id)"
-          >联网生成 3 道变式题</el-button
         ><a v-if="q.source_url" :href="q.source_url" target="_blank"
           >查看来源</a
         >

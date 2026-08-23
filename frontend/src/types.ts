@@ -1,5 +1,5 @@
 export type QuestionType =
-  "single" | "multiple" | "short" | "project" | "system_design" | "code";
+  "single" | "multiple" | "short" | "project" | "system_design";
 export type AttemptStatus =
   "reviewing" | "in_progress" | "submitted" | "grading" | "completed";
 export interface Choice {
@@ -17,11 +17,7 @@ export interface Question {
   answer?: unknown;
   explanation?: string;
   scoring_points?: string[];
-  visible_tests?: string[];
-  hidden_tests?: string[];
   source_url?: string;
-  code_template?: string;
-  examples?: { input: string; output: string }[];
   enabled?: boolean;
 }
 export interface Answer {
@@ -29,7 +25,6 @@ export interface Answer {
   value: string | string[];
   flagged: boolean;
   saved_at?: string;
-  code_result?: CodeResult;
 }
 export interface ReviewCard {
   id: number;
@@ -103,14 +98,6 @@ export interface ReviewResult {
   pending_count: number;
   grades: GradeItem[];
   domain_scores: Ability[];
-}
-export interface CodeResult {
-  passed: number;
-  total: number;
-  stdout: string;
-  stderr: string;
-  timed_out: boolean;
-  duration_ms: number;
 }
 export interface Settings {
   interview_date: string;

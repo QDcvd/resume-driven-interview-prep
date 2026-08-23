@@ -4,11 +4,9 @@ import { useRoute, useRouter, onBeforeRouteLeave } from "vue-router";
 import { ElMessageBox, ElMessage } from "element-plus";
 import { useExamStore } from "../stores/exam";
 import { api } from "../api/client";
-import CodeEditor from "../components/CodeEditor.vue";
 const s = useExamStore(),
   route = useRoute(),
   router = useRouter(),
-  running = ref(false),
   submitting = ref(false);
 const q = computed(() => s.current);
 const answer = computed({
@@ -93,18 +91,6 @@ async function submit(timedOut = false) {
     submitting.value = false;
   }
 }
-async function run() {
-  if (typeof answer.value !== "string") return;
-  running.value = true;
-  try {
-    const r = await api.runCode(answer.value, q.value?.id);
-    if (q.value && s.attempt?.answers[q.value.id])
-      s.attempt.answers[q.value.id].code_result = r;
-    ElMessage.success(`通过 ${r.passed}/${r.total} 个测试`);
-  } finally {
-    running.value = false;
-  }
-}
 </script>
 <template>
   <template v-if="s.attempt && q"
@@ -163,16 +149,6 @@ async function run() {
             class="choice"
             >{{ c.key }}. {{ c.text }}</el-checkbox
           ></el-checkbox-group
-        ><template v-else-if="q.type === 'code'"
-          ><CodeEditor v-model="answer as string" />
-          <div class="toolbar" style="margin-top: 12px">
-            <el-button type="primary" plain :loading="running" @click="run"
-              >运行示例与隐藏测试</el-button
-            ><span v-if="s.attempt.answers[q.id]?.code_result" class="muted"
-              >通过 {{ s.attempt.answers[q.id].code_result!.passed }} /
-              {{ s.attempt.answers[q.id].code_result!.total }}</span
-            >
-          </div></template
         ><el-input
           v-else
           v-model="answer"

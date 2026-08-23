@@ -3,7 +3,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-QuestionType = Literal["choice", "short_answer", "project", "system_design", "code"]
+QuestionType = Literal["choice", "short_answer", "project", "system_design"]
 Difficulty = Literal["basic", "practical", "deep"]
 
 
@@ -17,8 +17,6 @@ class QuestionInput(BaseModel):
     correct_answer: Any
     explanation: str = ""
     scoring_points: list[str] = Field(default_factory=list)
-    visible_tests: list[str] = Field(default_factory=list)
-    hidden_tests: list[str] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)
     source_url: str = ""
     verified_at: date | None = None
@@ -57,13 +55,6 @@ class FailureInput(BaseModel):
     error: str
 
 
-class CodeRunInput(BaseModel):
-    code: str = Field(max_length=30_000)
-    question_id: int | None = None
-    visible_tests: list[str] = Field(default_factory=list, max_length=20)
-    hidden_tests: list[str] = Field(default_factory=list, max_length=50)
-
-
 class SettingsInput(BaseModel):
     interview_date: date
     llm_max_concurrency: int = Field(default=2, ge=1, le=8)
@@ -80,10 +71,6 @@ class GradingResultInput(BaseModel):
     confidence: float = Field(default=0.0, ge=0, le=1)
     source: Literal["ai", "manual"] = "ai"
     reason: str = ""
-
-
-class VariantRequest(BaseModel):
-    count: int = Field(default=1, ge=1, le=5)
 
 
 class ScoreOverrideInput(BaseModel):

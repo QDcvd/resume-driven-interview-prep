@@ -2,7 +2,6 @@ import axios from "axios";
 import type {
   Ability,
   Attempt,
-  CodeResult,
   Dashboard,
   InterviewMessageItem,
   InterviewReportItem,
@@ -31,8 +30,6 @@ type RawQuestion = {
   correct_answer?: unknown;
   explanation?: string;
   scoring_points?: string[];
-  visible_tests?: string[];
-  hidden_tests?: string[];
   enabled?: boolean;
 };
 type RawGrade = {
@@ -103,8 +100,6 @@ function question(raw: RawQuestion): Question {
     answer: correct,
     explanation: raw.explanation,
     scoring_points: raw.scoring_points ?? [],
-    visible_tests: raw.visible_tests ?? [],
-    hidden_tests: raw.hidden_tests ?? [],
     source_url: raw.source_url,
     enabled: raw.enabled ?? true,
   };
@@ -340,7 +335,6 @@ export const api = {
           short: 25 / 20,
           project: 20 / 8,
           system_design: 15 / 2,
-          code: 10,
         },
         subjectiveScore = grades.reduce((sum, grade) => {
           const question = a.questions.find((q) => q.id === grade.question_id);
@@ -382,26 +376,6 @@ export const api = {
         score,
         reason,
       }),
-    ),
-  runCode: (code: string, questionId?: number) =>
-    body(
-      http.post<Record<string, unknown>>("/code/run", {
-        code,
-        question_id: questionId,
-        visible_tests: [],
-        hidden_tests: [],
-      }),
-    ).then(
-      (raw) =>
-        ({
-          passed:
-            Number(raw.visible_passed ?? 0) + Number(raw.hidden_passed ?? 0),
-          total: Number(raw.visible_total ?? 0) + Number(raw.hidden_total ?? 0),
-          stdout: "",
-          stderr: ((raw.failures as string[]) ?? []).join("\n"),
-          timed_out: Boolean(raw.timed_out),
-          duration_ms: 0,
-        }) satisfies CodeResult,
     ),
   questions: (params: Record<string, unknown>) =>
     body(
@@ -452,8 +426,6 @@ export const api = {
       correct_answer: q.answer ?? "",
       explanation: q.explanation ?? "",
       scoring_points: q.scoring_points ?? [],
-      visible_tests: q.visible_tests ?? [],
-      hidden_tests: q.hidden_tests ?? [],
       tags: q.tags ?? [],
       source_url: q.source_url ?? "",
       verified_at: null,
@@ -470,8 +442,6 @@ export const api = {
         params: domain ? { category: domain } : undefined,
       }),
     ).then((x) => ({ ...x, items: x.items.map(question) })),
-  generateVariant: (id: number, count: number) =>
-    body(http.post(`/questions/${id}/variants`, { count })),
   abilities: () => body(http.get<Ability[]>("/stats/abilities")),
   settings: () =>
     body(http.get<Record<string, unknown>>("/settings")).then(settings),

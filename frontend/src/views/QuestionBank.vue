@@ -42,8 +42,6 @@ function newQuestion() {
     choices: "ABCD".split("").map((key) => ({ key, text: "" })),
     answer: "A",
     scoring_points: [],
-    visible_tests: [],
-    hidden_tests: [],
     enabled: true,
   };
 }
@@ -153,7 +151,6 @@ async function imp(e: Event) {
                   'short',
                   'project',
                   'system_design',
-                  'code',
                 ]"
                 :key="x"
                 :value="x" /></el-select></el-form-item
@@ -196,24 +193,6 @@ async function imp(e: Event) {
             placeholder="输入评分点后回车"
           />
         </el-form-item>
-        <template v-if="editing.type === 'code'">
-          <el-form-item label="示例测试（Python assert）"
-            ><el-select
-              v-model="editing.visible_tests"
-              multiple
-              filterable
-              allow-create
-              default-first-option
-          /></el-form-item>
-          <el-form-item label="隐藏测试（不会发到浏览器）"
-            ><el-select
-              v-model="editing.hidden_tests"
-              multiple
-              filterable
-              allow-create
-              default-first-option
-          /></el-form-item>
-        </template>
         <el-form-item label="解析"
           ><el-input
             v-model="editing.explanation"
