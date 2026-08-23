@@ -1,0 +1,32 @@
+{
+  "name": "resume-interview-exam-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit -p tsconfig.app.json && vite build",
+    "type-check": "vue-tsc --noEmit -p tsconfig.app.json"
+  },
+  "dependencies": {
+    "@codemirror/commands": "^6.8.1",
+    "@codemirror/lang-python": "^6.2.1",
+    "@codemirror/state": "^6.5.2",
+    "@codemirror/view": "^6.36.4",
+    "axios": "^1.8.0",
+    "codemirror": "^6.0.1",
+    "echarts": "^6.1.0",
+    "element-plus": "^2.9.0",
+    "pinia": "^3.0.0",
+    "vue": "^3.5.0",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@vitejs/plugin-vue": "^5.2.0",
+    "prettier": "^3.9.6",
+    "typescript": "~5.7.0",
+    "vite": "^6.1.0",
+    "vue-tsc": "^2.2.0"
+  }
+}
