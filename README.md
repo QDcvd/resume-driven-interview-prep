@@ -51,5 +51,3 @@ cd frontend && npm run dev  # 前端 Vite（/api 代理到 127.0.0.1:8000）
 ```
 
 前端构建：`cd frontend && npm run build`（vue-tsc 类型检查 + vite 构建，产物由后端直接托管）。
-
-完整产品规格见 [docs/PRD.md](docs/PRD.md)，模拟面试设计见 [docs/mock-interview-design.md](docs/mock-interview-design.md)。
