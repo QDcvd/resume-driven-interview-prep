@@ -6,7 +6,6 @@ import Review from "./views/Review.vue";
 import Mistakes from "./views/Mistakes.vue";
 import QuestionBank from "./views/QuestionBank.vue";
 import KnowledgeCards from "./views/KnowledgeCards.vue";
-import Candidates from "./views/Candidates.vue";
 import Analytics from "./views/Analytics.vue";
 import SettingsView from "./views/Settings.vue";
 import Onboarding from "./views/Onboarding.vue";
@@ -25,7 +24,6 @@ export default createRouter({
     { path: "/mistakes", component: Mistakes },
     { path: "/questions", component: QuestionBank },
     { path: "/knowledge", component: KnowledgeCards },
-    { path: "/candidates", component: Candidates },
     { path: "/analytics", component: Analytics },
     { path: "/settings", component: SettingsView },
   ],

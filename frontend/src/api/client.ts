@@ -2,7 +2,6 @@ import axios from "axios";
 import type {
   Ability,
   Attempt,
-  Candidate,
   CodeResult,
   Dashboard,
   InterviewMessageItem,
@@ -465,9 +464,6 @@ export const api = {
       ? body(http.put(`/questions/${q.id}`, payload))
       : body(http.post("/questions", payload));
   },
-  candidates: () => body(http.get<Candidate[]>("/candidates")),
-  reviewCandidate: (id: number, decision: "approve" | "reject") =>
-    body(http.post(`/candidates/${id}/${decision}`)),
   mistakes: (domain?: string) =>
     body(
       http.get<{ items: RawQuestion[]; due_count: number }>("/mistakes", {

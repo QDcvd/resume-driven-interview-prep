@@ -104,17 +104,6 @@ export interface ReviewResult {
   grades: GradeItem[];
   domain_scores: Ability[];
 }
-export interface Candidate {
-  id: number;
-  stem: string;
-  type: QuestionType;
-  domain: string;
-  status: "pending" | "approved" | "rejected";
-  source_url: string;
-  evidence_title: string;
-  choices?: Choice[];
-  correct_answer?: string | string[];
-}
 export interface CodeResult {
   passed: number;
   total: number;

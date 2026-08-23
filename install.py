@@ -31,7 +31,6 @@ def main() -> None:
         shutil.copy2(ROOT / ".env.example", ROOT / ".env")
         print("已从 .env.example 创建 .env，请在使用 AI 评分前填写模型配置。")
     run([uv, "sync", "--dev"])
-    run([uv, "run", "python", "scripts/validate_content.py"])
     npm_command = [npm, "ci"] if (FRONTEND / "package-lock.json").exists() else [npm, "install"]
     run(npm_command, FRONTEND)
     run([npm, "run", "build"], FRONTEND)

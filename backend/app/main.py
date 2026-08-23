@@ -77,7 +77,6 @@ from .schemas import (
     SettingsInput,
     VariantRequest,
 )
-from .seeding import seed_content_if_empty
 from .services import (
     EXAM_DURATION_MINUTES,
     EXAM_QUESTION_COUNT,
@@ -381,11 +380,6 @@ def create_app(
     app.state.resume_parser = resume_parser_fn
     app.state.research_fn = research_fn
     app.state.generate_fn = generate_fn
-    if database_url is None:
-        content_dir = Path(__file__).resolve().parents[2] / "content"
-        if content_dir.exists():
-            with factory() as seed_session:
-                app.state.seeded = seed_content_if_empty(seed_session, content_dir)
 
     def db() -> Any:
         with factory() as session:
